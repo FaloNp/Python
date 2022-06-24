@@ -1,0 +1,1 @@
+Program ma za zadanie z automatyzuwac monotonne czynnosci, posiada opcje zapisywania jak i wczytywania wczesniej utworzonych szablonow, by dodatkowo usprawnic prace
