@@ -1,171 +1,158 @@
-from tkinter import *
-from pynput.keyboard import Key, Controller
+import tkinter as tk
 import time
-import glob
-import threading
+from pynput.keyboard import Controller
+
+import add
+import function
+import setting
+import variable
+
+#flagi globalne do sprawdzania stanu programu
+isOpen = 0
+run=False
+buttonId=[]
+buttonTime=[]
 
 keyboard = Controller()
-root = Tk()  # tworzenie nowego okienka
-root.resizable(width=FALSE, height=FALSE)
-IsOpen = 0  # flaga sprawdzajaca czy okienko jest juz otworzone np kiedy kilka razy kliknie sie przycisk ustawienie
-global ButtonList
-ButtonList = []
-global PressList
-PressList = []
+size=variable.main_Width+"x"+variable.main_Height
+size_width=int(variable.main_Width)
+size_height=int(variable.main_Height)
 
-
-
-def Start():  # funkcja przycisku ktora otwiera nowe okno
-    if ButtonList:
-        Clock()
-        time.sleep(5)
-        for i, nazwa in enumerate(ButtonList):
-            Active(nazwa)
-            keyboard.press(nazwa)
-            time.sleep(int(PressList[i]))
-            keyboard.release(nazwa)
+#Funkcje
+def check_state_fun():
+    """Update button states based on the program's run state"""
+    if run:
+        buttonStart.config(state=tk.DISABLED)
+        buttonAdd.config(state=tk.DISABLED)
+        buttonSetting.config(state=tk.DISABLED)
+        buttonStop.config(state=tk.NORMAL)
     else:
-        error="Wybierz najpierw przyciski"
-        Error(error)
-def Clock():
-    i = 5
-    while (i > 0):
-        clock = Label(root, text=f'{i}', bg="white")
-        clock.place(relwidth=0.05, relheight=0.07, relx=0.59, rely=0.114)
-        time.sleep(1)
-        i = i - 1
-        clock.destroy()
-def Error(errortext):
-    def Error_Exit():
-        error.destroy()
-    error = Tk()
-    error.resizable(width=FALSE, height=FALSE)
-    error.title("Blad")
-    boxerror = Frame(error, height=150, width=300)
-    errorlabel = Label(error, text=errortext)
-    errorlabel.place(relwidth=1, relheight=0.1, rely=0.3)
-    error_exit = Button(error, text="Wyjscie", command=Error_Exit)
-    error_exit.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.7)
-    boxerror.pack()
-    error.attributes('-topmost', True)
-def OpenSetting():  # funkcja przycisku ktora otwiera nowe okno
-    setting = Tk()
-    setting.resizable(width=FALSE, height=FALSE)
-    setting.title("Ustawienia")
-    boxsetting = Frame(setting, height=900, width=500)
-
-    # buttony
-    button_add = Button(setting, text="Zapisz", command=NewFile)
-    button_add.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.1)
-    button_add = Button(setting, text="Wczytaj", command=Load)
-    button_add.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.25)
-    button_setting_exit = Button(setting, text="Wyjscie", command=lambda: setting.destroy())
-    button_setting_exit.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.5)
-
-    # pojemnik
-    buttonlist = Canvas(setting, bg="brown", height=200, width=300)
-    buttonlist.place(relwidth=0.5, relheight=0.5, rely=0.05)
-    buttonInformation = Label(setting, text="Lista wykrytych szablonow")
-    buttonInformation.place(rely=0.0, relwidth=0.5)
-    filename = glob.glob('*.txt')  # wyciaganie nazw wszystkich plikow tekstowtych do zmiennej filename
-    for i, nazwa in enumerate(filename):  # przekazuje tekst z fumckji tk.Entry
-        x = Label(buttonlist, bg="orange", text=nazwa)
-        x.place(relwidth=1, relheight=0.05, relx=0, rely=0 + i * 0.05)
-    boxsetting.pack()
-
-
-
-def File():
-    file = open("file.txt", "w")
-    for i, nazwa in enumerate(ButtonList):
-        file.writelines(nazwa + " " + PressList[i])
-        file.writelines("\n")
-
-
-def Load():
-    file = open("file.txt", "r")
-    file = file.readlines()
-    Reset()
-    for line in file:
-        SetOption(line[0], line[2])
-def NewFile():
-    if ButtonList:
-        print("zapisano")
-        file = open("filenowyszablon.txt", "w")
-        for i, nazwa in enumerate(ButtonList):  # przekazuje tekst z funkcji tk.Entry
-            file.write(nazwa + " " + PressList[i] + "\n")
-
-
+        buttonStart.config(state=tk.NORMAL)
+        buttonAdd.config(state=tk.NORMAL)
+        buttonSetting.config(state=tk.NORMAL)
+        buttonStop.config(state=tk.DISABLED)
+    root.update()
+def clock_fun(i):
+    """Countdown clock function"""
+    if i > 0:
+        clock.config(text=f'{i}')
+        root.after(1000, clock_fun, i - 1)
     else:
-        error = "Nie wlasciwy szablon"
-        Error(error)
-    Reset()
-
-def Exit():
+        clock.config(text=" ")
+        start_fun()
+def label_reset_fun(labellist):
+    """Reset the background color of labels in the list"""
+    for i, id in enumerate(labellist):
+        labellist[i].config(bg='white')
+    root.update()
+def start_fun():
+    global run
+    if not buttonId or not buttonTime:
+        error = "Wybierz najpierw przyciski"
+        function.error_fun(error)
+    else:
+        run=True
+        check_state_fun()
+        label_reset_fun(labelIdButtonList)
+        label_reset_fun(labelTimeButtonList)
+        for i, id in enumerate(buttonId):
+            labelIdButtonList[i].config(bg='green')
+            labelTimeButtonList[i].config(bg='green')
+            root.update()
+            if not run:  #Sprawdza czy program powinnien w tym momencie byc uruchomiony
+                break
+            keyboard.press(id)
+            time.sleep(int(buttonTime[i]))
+            keyboard.release(id)
+            labelIdButtonList[i].config(bg='white')
+            labelTimeButtonList[i].config(bg='white')
+            root.update()
+        run=False
+        check_state_fun()
+def stop_fun():
+    global run
+    run = False
+    check_state_fun()
+def add_button_fun():
+    addButton=add.Add()
+def open_setting_fun():
+    settingButton=setting.Setting()
+def exit_fun():
     root.destroy()
-#########################################################################################################
-def Active(nazwa):
-    print("sloflsofgko")
-    x = Label(box, bg="green", text="pdkaokdoakdoakdeaokoderzez")
-    x.place(relwidth=1, relheight=0.05, relx=0, rely=0 + 2 * 0.05)
-    x.attributes('-topmost', True)
-###################################################################################################################
-def SetOption(x, y):
-    if len(x) == 1:
-        ButtonList.append(x)
-        if y.isdigit():
-            PressList.append(y)
-            for i, nazwa in enumerate(ButtonList):  # przekazuje tekst z funkcji tk.Entry
-                x = Label(buttonlist, justify='left', bg="orange", text=nazwa + " przez " + PressList[i])
-                x.place(relwidth=1, relheight=0.05, relx=0, rely=0 + i * 0.05)
-        else:
-            error = "Wartosc powinna byc liczba"
-            Error(error)
-    else:
-        error="Przycisk powienien byc pojedyncz"
-        Error(error)
-def Reset():
-    del PressList[:]
-    del ButtonList[:]
-def AddButton():
-    addbutton = Tk()
-    addbutton.resizable(width=FALSE, height=FALSE)
-    addbutton.title("Dodaj przycisk")
-    boxaddbutton = Frame(addbutton, height=200, width=300)
-    information = Label(addbutton, text="Przycisk do dodania")
-    information.place(relwidth=1, relheight=0.1, rely=0.1)
-    entrybutton = Entry(addbutton)
-    entrybutton.place(relwidth=0.5, relheight=0.1, rely=0.2, relx=0.1)
-    informationhowlong = Label(addbutton, text="Przez ile sekund przytrzymac przycisk")
-    informationhowlong.place(relwidth=1, relheight=0.1, rely=0.5)
-    entryhowlong = Entry(addbutton)
-    entryhowlong.place(relwidth=0.2, relheight=0.1, relx=0.1, rely=0.7)
-    setconfiguration = Button(addbutton, text="Set", command=lambda: SetOption(entrybutton.get(), entryhowlong.get()))
-    setconfiguration.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.75)
-    boxaddbutton.pack()
-    addbutton.attributes('-topmost', True)
 
 
-box = Frame(root, height=500, width=1200)  # tworzy okienko o parametrach
-box.pack()
-# lista z informacjami o przyciskach
-buttonlist = Canvas(box, bg="brown", height=200, width=300)
-buttonlist.place(relwidth=0.5, relheight=0.9, rely=0.05)
-buttonInformation = Label(root, text="Lista dodanych przyciskow")
-buttonInformation.place(rely=0.0, relwidth=0.5)
 
 
-# buttony
-button_add = Button(root, text="Start", command=Start)
-button_add.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.1)
-button_add = Button(root, text="Dodaj przycisk", command=AddButton)
-button_add.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.25)
-button_setting = Button(root, text="Stop", command=OpenSetting)
-button_setting.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.4)
-button_setting = Button(root, text="Ustawienia", command=OpenSetting)
-button_setting.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.55)
-button_add = Button(root, text="Wyjscie", command=Exit)
-button_add.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.7)
+#Wczytywanie potrzebnych danych
+try:
+    information=function.file_read_fun(variable.file_Name) #pobieranie informacji z pliku, dane sa zapisane w formacie [a b] gdzie a to przycisk ktory ma byc symulowany, b to czas
+    buttonId=function.spliter_fun(information,0) #rozbicie tablicy i pobranie parametru a
+    buttonTime=function.spliter_fun(information,1) #rozbicie tablicy i pobranie parametru b
+except Exception as e:
+    function.error_fun(e)
 
+
+root = tk.Tk()  #tworzenie nowego okienka
+root.geometry(size) #wymiary okienka
+root.resizable(True,True)
+root.minsize(width=500, height=500)
+root.title("Bot")
+
+mainFrame = tk.Frame(root)  #tworzy glowna ramke programu na ktorej beda umieszczane nastepne elementy
+mainFrame.pack(fill=tk.BOTH, expand=True) #ustawia rozmiary ramki na takie jakie ma glowne okienko root
+#lewa kolumna
+leftColumn=tk.Canvas(mainFrame,width=size_width/2)
+leftColumn.grid(row=0, column=0, sticky="nsew")
+
+#prawa kolumna
+rightColumn=tk.Frame(mainFrame,bg="green",width=size_width/2)
+rightColumn.grid(row=0, column=1, sticky="nsew")
+
+#ustawianie siatki 1x2
+mainFrame.grid_rowconfigure(0, weight=1)
+mainFrame.grid_columnconfigure(0, weight=1)
+mainFrame.grid_columnconfigure(1, weight=1)
+
+
+#Ukladanie elementow w lewej kolumnie
+#scrollbar = tk.Scrollbar(leftColumn, orient="vertical") jezeli bedzie mi sie chcialo to dodam scrollbar
+counter=0
+
+idLabelList=[] #Inicjowanie tablicy w ktorej beda przechowywane nastepe obiekty "label" by sie pozniej do nich odnieść
+labelIdButtonList=[]
+labelTimeButtonList=[]
+
+headerLabel = tk.Label(leftColumn, text="BUTTON LIST")
+headerLabel.place(relwidth=1, relheight=0.1)
+#Dynamiczna tabela (Ilosc elementow label jest zalezna od bazy danych information)
+for item in buttonId:
+    label=tk.Label(leftColumn)
+    label.place(relwidth=1, relheight=0.1, relx=0, rely=0.1*(counter+1))
+    labelIdButton=tk.Label(label,text=item,bg="white")
+    labelIdButton.place(relwidth=0.5,relheight=1)
+    labelTimeButton = tk.Label(label, text=buttonTime[counter],bg="white")
+    labelTimeButton.place(relwidth=0.5,relheight=1,relx=0.5)
+    labelIdButtonList.append(labelIdButton)
+    labelTimeButtonList.append(labelTimeButton)
+    idLabelList.append(label)
+    counter=counter+1
+#idLabelList[2].config(bg='white') #linia sprawdzajaca czy wszystko jest poprawnie polaczone
+#labelIdButtonList[2].config(bg='green') #linia sprawdzajaca czy wszystko jest poprawnie polaczone
+#labelTimeButtonList[2].config(bg='green') #linia sprawdzajaca czy wszystko jest poprawnie polaczone
+
+#Ukladanie elementow w prawej kolumnie
+clock = tk.Label(rightColumn, text="", bg="white")
+clock.place(relwidth=0.1, relheight=0.1, relx=0.1, rely=0.1)
+#Dodawanie panelu sterowania
+buttonStart = tk.Button(root, text="Start", command=lambda:clock_fun(5))
+buttonStart.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.1)
+buttonAdd = tk.Button(root, text="Dodaj przycisk", command=add_button_fun)
+buttonAdd.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.25)
+buttonStop = tk.Button(root, text="Stop", command=stop_fun, state=tk.DISABLED)
+buttonStop.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.4)
+buttonSetting = tk.Button(root, text="Ustawienia", command=open_setting_fun)
+buttonSetting.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.55)
+buttonExit = tk.Button(root, text="Wyjscie", command=exit_fun)
+buttonExit.place(relwidth=0.2, relheight=0.1, relx=0.7, rely=0.7)
 
 root.mainloop()
