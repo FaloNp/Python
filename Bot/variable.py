@@ -8,7 +8,7 @@ main_Height="500"
 button_List=["START","ADD","SETTING","STOP","EXIT"]
 
 #File
-file_Name="plik.txt"
+file_Nam="plik.txt"
 
 #ErrorList
 listError=["An unexpected error has occurred. Please try again or contact support if the issue persists",
